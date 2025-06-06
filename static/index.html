@@ -102,4 +102,12 @@
         const now = new Date();
         timestamp.textContent = `Last updated: ${now.toLocaleTimeString()}`;
       } catch (e) {
-        document.getElementById("content").innerHTML = "<p style='text-align:center;color:red;'>Error loading data</
+        document.getElementById("content").innerHTML = "<p style='text-align:center;color:red;'>Error loading data</p>";
+      }
+    }
+
+    loadData();
+    setInterval(loadData, 60000); // обновление каждую минуту
+  </script>
+</body>
+</html>
