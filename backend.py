@@ -13,16 +13,18 @@ def fetch_data():
             if json_data.get("success") and json_data["data"]:
                 result = []
                 for garden in json_data["data"]:
-                    honeyevent = garden.get("honeyevent", {})
-                    rare_items = {
-                        name: int(qty) for name, qty in honeyevent.items()
-                        if name in RARE_HONEYEVENT and int(qty) > 0
+                    data = {
+                        "player": garden.get("playerName", "Unknown Player"),
+                        "weather": garden.get("weather", {}).get("type", "Unknown"),
+                        "gear": garden.get("gear", {}),
+                        "seeds": garden.get("seeds", {}),
+                        "eggs": {egg["name"]: egg["quantity"] for egg in garden.get("eggs", [])},
+                        "honeyevent": {
+                            name: qty for name, qty in garden.get("honeyevent", {}).items()
+                            if name in RARE_HONEYEVENT and int(qty) > 0
+                        }
                     }
-                    if rare_items:
-                        result.append({
-                            "player": garden.get("playerName", "Unknown Player"),
-                            "items": rare_items
-                        })
+                    result.append(data)
                 return result
     except Exception as e:
         print(f"[ERROR] {e}")
