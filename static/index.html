@@ -1,55 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>🌱 Garden Tracker</title>
+  <meta charset="UTF-8" />
+  <title>🌼 Garden Data Tracker</title>
   <style>
+    /* Общие стили */
+    * {
+      box-sizing: border-box;
+    }
     body {
-      background: linear-gradient(to right, #1f1c2c, #928dab);
-      color: #f0f0f0;
-      font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 20px;
+      background: #0d0f1a;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 20px;
+      font-size: 2rem;
+      margin-bottom: 30px;
+      color: #72e2ae;
       animation: fadeIn 1s ease;
     }
 
-    .card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.3);
-      animation: slideUp 0.4s ease;
+    /* Стили для контейнера карточек */
+    #content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
     }
 
+    /* Стили для одной карточки игрока */
+    .card {
+      background: #1a1c2e;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+      animation: slideUp 0.4s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Заголовок карточки */
+    .player-name {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #ffd369;
+      margin-bottom: 10px;
+    }
+
+    /* Текущий статус погоды */
+    .weather {
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+    .weather .label {
+      font-weight: 500;
+      color: #72e2ae;
+    }
+
+    /* Секция с предметами */
+    .section {
+      margin-top: 15px;
+    }
     .section-title {
-      font-weight: bold;
-      margin-top: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #72e2ae;
+    }
+
+    /* Сетка для элементов внутри секции */
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 10px;
+    }
+
+    .item-box {
+      background: #25273d;
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+      font-size: 0.95rem;
+      line-height: 1.2rem;
+      position: relative;
+      animation: fadeIn 0.5s ease;
+    }
+    .item-box .name {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: #ffffff;
+    }
+    .item-box .qty {
+      display: block;
+      font-size: 0.9rem;
       color: #ffd369;
     }
 
-    .pair {
-      margin-left: 10px;
-      line-height: 1.6em;
-    }
-
+    /* Время последнего обновления */
     .timestamp {
       text-align: center;
       margin-top: 30px;
-      color: #ccc;
-      font-size: 0.9em;
+      color: #aaaaaa;
+      font-size: 0.9rem;
     }
 
+    /* Анимации */
     @keyframes slideUp {
       from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
-
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -58,56 +121,162 @@
 </head>
 <body>
   <h1>🌼 Garden Data Tracker</h1>
-  <div id="content"></div>
+  <div id="content">
+    <!-- Сюда JS динамически вставит карточки каждого игрока -->
+  </div>
   <div class="timestamp" id="timestamp"></div>
 
   <script>
+    // Функция для получения и отрисовки данных
     async function loadData() {
       try {
         const res = await fetch('/api/data');
         const data = await res.json();
-        const content = document.getElementById("content");
-        const timestamp = document.getElementById("timestamp");
-        content.innerHTML = "";
+        const content = document.getElementById('content');
+        const timestamp = document.getElementById('timestamp');
 
-        if (data.length === 0) {
-          content.innerHTML = "<p style='text-align:center;'>No data available.</p>";
+        content.innerHTML = ''; // Очищаем старые карточки
+
+        if (!Array.isArray(data) || data.length === 0) {
+          content.innerHTML = '<p style="text-align:center; color:#ccc;">No data available.</p>';
         } else {
           data.forEach(entry => {
-            const card = document.createElement("div");
-            card.className = "card";
-            card.innerHTML = `
-              <div class="section-title">👤 Player: ${entry.player}</div>
-              <div class="pair">🌦️ Weather: ${entry.weather}</div>
+            // Фильтруем gear/ seeds / eggs / honeyevent по qty > 0
+            const gearItems = Object.entries(entry.gear || {})
+              .filter(([name, qty]) => parseInt(qty) > 0);
+            const seedItems = Object.entries(entry.seeds || {})
+              .filter(([name, qty]) => parseInt(qty) > 0);
+            const eggItems = Object.entries(entry.eggs || {})
+              .filter(([name, qty]) => parseInt(qty) > 0);
+            // honeyevent уже содержит только редкие с qty > 0
+            const honeyItems = Object.entries(entry.honeyevent || {});
 
-              <div class="section-title">🧰 Gear:</div>
-              ${Object.entries(entry.gear).map(([k,v]) => `<div class="pair">🔧 ${k}: ${v}</div>`).join("")}
+            // Собираем HTML для карточки
+            const card = document.createElement('div');
+            card.className = 'card';
 
-              <div class="section-title">🌱 Seeds:</div>
-              ${Object.entries(entry.seeds).map(([k,v]) => `<div class="pair">🌿 ${k}: ${v}</div>`).join("")}
+            // 1. Имя игрока
+            const nameEl = document.createElement('div');
+            nameEl.className = 'player-name';
+            nameEl.textContent = entry.player || 'Unknown Player';
+            card.appendChild(nameEl);
 
-              <div class="section-title">🥚 Eggs:</div>
-              ${Object.entries(entry.eggs).map(([k,v]) => `<div class="pair">🐣 ${k}: ${v}</div>`).join("")}
+            // 2. Текущая погода
+            const weatherEl = document.createElement('div');
+            weatherEl.className = 'weather';
+            weatherEl.innerHTML = `<span class="label">Weather:</span> ${entry.weather || 'Unknown'}`;
+            card.appendChild(weatherEl);
 
-              <div class="section-title">🍯 Rare HoneyEvent Items:</div>
-              ${Object.entries(entry.honeyevent).length > 0
-                ? Object.entries(entry.honeyevent).map(([k,v]) => `<div class="pair">✨ ${k}: ${v}</div>`).join("")
-                : `<div class="pair">❌ None</div>`
-              }
-            `;
+            // 3. Секция: Gear (если есть)
+            if (gearItems.length > 0) {
+              const secGear = document.createElement('div');
+              secGear.className = 'section';
+              secGear.innerHTML = `<div class="section-title">🧰 Gear</div>`;
+              const gridGear = document.createElement('div');
+              gridGear.className = 'items-grid';
+              gearItems.forEach(([name, qty]) => {
+                const box = document.createElement('div');
+                box.className = 'item-box';
+                box.innerHTML = `
+                  <span class="name">${name}</span>
+                  <span class="qty">${qty}</span>
+                `;
+                gridGear.appendChild(box);
+              });
+              secGear.appendChild(gridGear);
+              card.appendChild(secGear);
+            }
+
+            // 4. Секция: Seeds (если есть)
+            if (seedItems.length > 0) {
+              const secSeeds = document.createElement('div');
+              secSeeds.className = 'section';
+              secSeeds.innerHTML = `<div class="section-title">🌱 Seeds</div>`;
+              const gridSeeds = document.createElement('div');
+              gridSeeds.className = 'items-grid';
+              seedItems.forEach(([name, qty]) => {
+                const box = document.createElement('div');
+                box.className = 'item-box';
+                box.innerHTML = `
+                  <span class="name">${name}</span>
+                  <span class="qty">${qty}</span>
+                `;
+                gridSeeds.appendChild(box);
+              });
+              secSeeds.appendChild(gridSeeds);
+              card.appendChild(secSeeds);
+            }
+
+            // 5. Секция: Eggs (если есть)
+            if (eggItems.length > 0) {
+              const secEggs = document.createElement('div');
+              secEggs.className = 'section';
+              secEggs.innerHTML = `<div class="section-title">🥚 Eggs</div>`;
+              const gridEggs = document.createElement('div');
+              gridEggs.className = 'items-grid';
+              eggItems.forEach(([name, qty]) => {
+                const box = document.createElement('div');
+                box.className = 'item-box';
+                box.innerHTML = `
+                  <span class="name">${name}</span>
+                  <span class="qty">${qty}</span>
+                `;
+                gridEggs.appendChild(box);
+              });
+              secEggs.appendChild(gridEggs);
+              card.appendChild(secEggs);
+            }
+
+            // 6. Секция: Rare HoneyEvent Items (если есть)
+            if (honeyItems.length > 0) {
+              const secHoney = document.createElement('div');
+              secHoney.className = 'section';
+              secHoney.innerHTML = `<div class="section-title">🍯 Rare HoneyEvent Items</div>`;
+              const gridHoney = document.createElement('div');
+              gridHoney.className = 'items-grid';
+              honeyItems.forEach(([name, qty]) => {
+                const box = document.createElement('div');
+                box.className = 'item-box';
+                box.innerHTML = `
+                  <span class="name">${name}</span>
+                  <span class="qty">${qty}</span>
+                `;
+                gridHoney.appendChild(box);
+              });
+              secHoney.appendChild(gridHoney);
+              card.appendChild(secHoney);
+            }
+
+            // Если ни в одной из секций нет элементов, можно вывести сообщение:
+            if (
+              gearItems.length === 0 &&
+              seedItems.length === 0 &&
+              eggItems.length === 0 &&
+              honeyItems.length === 0
+            ) {
+              const noData = document.createElement('div');
+              noData.style.marginTop = '10px';
+              noData.style.color = '#cccccc';
+              noData.textContent = 'No items with quantity > 0.';
+              card.appendChild(noData);
+            }
+
             content.appendChild(card);
           });
         }
 
+        // Обновляем таймштамп
         const now = new Date();
-        timestamp.textContent = `Last updated: ${now.toLocaleTimeString()}`;
-      } catch (e) {
-        document.getElementById("content").innerHTML = "<p style='text-align:center;color:red;'>Error loading data</p>";
+        timestamp.textContent = `Last updated: ${now.toLocaleString()}`;
+      } catch (err) {
+        document.getElementById('content').innerHTML =
+          '<p style="text-align:center; color:#e74c3c;">Error loading data</p>';
+        console.error(err);
       }
     }
 
     loadData();
-    setInterval(loadData, 60000); // обновление каждую минуту
+    setInterval(loadData, 60000); // перезагружать каждую минуту
   </script>
 </body>
 </html>
