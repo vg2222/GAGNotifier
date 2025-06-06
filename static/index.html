@@ -2,47 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>🌼 Garden HoneyEvent Tracker</title>
+  <title>🌱 Garden Tracker</title>
   <style>
     body {
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      color: #fff;
+      background: linear-gradient(to right, #1f1c2c, #928dab);
+      color: #f0f0f0;
       font-family: 'Segoe UI', sans-serif;
-      padding: 20px;
       margin: 0;
+      padding: 20px;
     }
+
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       animation: fadeIn 1s ease;
     }
+
     .card {
-      background: #0f3460;
-      border-radius: 20px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
       padding: 20px;
       margin-bottom: 20px;
-      box-shadow: 0 0 20px rgba(255,255,255,0.1);
-      animation: slideUp 0.6s ease;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      animation: slideUp 0.4s ease;
     }
-    .player {
-      font-size: 1.5em;
-      margin-bottom: 10px;
+
+    .section-title {
+      font-weight: bold;
+      margin-top: 10px;
       color: #ffd369;
     }
-    .items {
-      font-size: 1.2em;
+
+    .pair {
+      margin-left: 10px;
       line-height: 1.6em;
     }
+
     .timestamp {
       text-align: center;
       margin-top: 30px;
-      color: #aaa;
+      color: #ccc;
       font-size: 0.9em;
     }
+
     @keyframes slideUp {
-      from { transform: translateY(30px); opacity: 0; }
+      from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
+
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -50,7 +57,7 @@
   </style>
 </head>
 <body>
-  <h1>🌼 Rare HoneyEvent Items</h1>
+  <h1>🌼 Garden Data Tracker</h1>
   <div id="content"></div>
   <div class="timestamp" id="timestamp"></div>
 
@@ -64,16 +71,29 @@
         content.innerHTML = "";
 
         if (data.length === 0) {
-          content.innerHTML = "<p style='text-align:center;'>No rare items found.</p>";
+          content.innerHTML = "<p style='text-align:center;'>No data available.</p>";
         } else {
           data.forEach(entry => {
             const card = document.createElement("div");
             card.className = "card";
             card.innerHTML = `
-              <div class="player">👤 ${entry.player}</div>
-              <div class="items">
-                ${Object.entries(entry.items).map(([name, qty]) => `🍯 ${name}: ${qty}`).join("<br>")}
-              </div>
+              <div class="section-title">👤 Player: ${entry.player}</div>
+              <div class="pair">🌦️ Weather: ${entry.weather}</div>
+
+              <div class="section-title">🧰 Gear:</div>
+              ${Object.entries(entry.gear).map(([k,v]) => `<div class="pair">🔧 ${k}: ${v}</div>`).join("")}
+
+              <div class="section-title">🌱 Seeds:</div>
+              ${Object.entries(entry.seeds).map(([k,v]) => `<div class="pair">🌿 ${k}: ${v}</div>`).join("")}
+
+              <div class="section-title">🥚 Eggs:</div>
+              ${Object.entries(entry.eggs).map(([k,v]) => `<div class="pair">🐣 ${k}: ${v}</div>`).join("")}
+
+              <div class="section-title">🍯 Rare HoneyEvent Items:</div>
+              ${Object.entries(entry.honeyevent).length > 0
+                ? Object.entries(entry.honeyevent).map(([k,v]) => `<div class="pair">✨ ${k}: ${v}</div>`).join("")
+                : `<div class="pair">❌ None</div>`
+              }
             `;
             content.appendChild(card);
           });
@@ -82,12 +102,4 @@
         const now = new Date();
         timestamp.textContent = `Last updated: ${now.toLocaleTimeString()}`;
       } catch (e) {
-        document.getElementById("content").innerHTML = "<p style='text-align:center;color:red;'>Error loading data</p>";
-      }
-    }
-
-    loadData();
-    setInterval(loadData, 60000); // каждую минуту
-  </script>
-</body>
-</html>
+        document.getElementById("content").innerHTML = "<p style='text-align:center;color:red;'>Error loading data</
